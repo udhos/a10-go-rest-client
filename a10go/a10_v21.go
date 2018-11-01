@@ -6,10 +6,11 @@ import (
 	"log"
 )
 
+// Client is an api client
 type Client struct {
-	host      string
-	sessionId string
-	opt       Options
+	host      string  // api host
+	sessionID string  // session id
+	opt       Options // client options
 }
 
 // FuncPrintf is function type for debug Printf
@@ -38,33 +39,33 @@ func New(host string, options Options) *Client {
 // Login opens a new session
 func (c *Client) Login(username, password string) error {
 	var errAuth error
-	c.sessionId, errAuth = a10v21Auth(c.host, username, password)
+	c.sessionID, errAuth = a10v21Auth(c.host, username, password)
 	return errAuth
 }
 
 // Logout closes an existing session
 func (c *Client) Logout() error {
-	return a10v21Close(c.host, c.sessionId)
+	return a10v21Close(c.host, c.sessionID)
 }
 
 // Get runs GET against an specific api method
 func (c *Client) Get(method string) ([]byte, error) {
-	return a10SessionGet(c.debugf, c.host, method, c.sessionId)
+	return a10SessionGet(c.debugf, c.host, method, c.sessionID)
 }
 
 // ServerList retrieves the full server list
 func (c *Client) ServerList() []A10Server {
-	return a10ServerList(c.debugf, c.host, c.sessionId)
+	return a10ServerList(c.debugf, c.host, c.sessionID)
 }
 
-// ServerList retrieves the full server group list
+// ServiceGroupList retrieves the full server group list
 func (c *Client) ServiceGroupList() []A10ServiceGroup {
-	return a10ServiceGroupList(c.debugf, c.host, c.sessionId)
+	return a10ServiceGroupList(c.debugf, c.host, c.sessionID)
 }
 
-// ServerList retrieves the full virtual server list
+// VirtualServerList retrieves the full virtual server list
 func (c *Client) VirtualServerList() []A10VServer {
-	return a10VirtualServerList(c.debugf, c.host, c.sessionId)
+	return a10VirtualServerList(c.debugf, c.host, c.sessionID)
 }
 
 // A10VServer is a virtual server
@@ -117,8 +118,8 @@ func a10v21url(host, method string) string {
 	return "https://" + host + "/services/rest/v2.1/?format=json&method=" + method
 }
 
-func a10v21urlSession(host, method, sessionId string) string {
-	return a10v21url(host, method) + "&session_id=" + sessionId
+func a10v21urlSession(host, method, sessionID string) string {
+	return a10v21url(host, method) + "&session_id=" + sessionID
 }
 
 func mapGetStr(debugf FuncPrintf, tab map[string]interface{}, key string) string {
@@ -144,10 +145,10 @@ func mapGetValue(debugf FuncPrintf, tab map[string]interface{}, key string) stri
 	return fmt.Sprintf("%v", value)
 }
 
-func a10ServerList(debugf FuncPrintf, host, sessionId string) []A10Server {
+func a10ServerList(debugf FuncPrintf, host, sessionID string) []A10Server {
 	var list []A10Server
 
-	servers, errGet := a10SessionGet(debugf, host, "slb.server.getAll", sessionId)
+	servers, errGet := a10SessionGet(debugf, host, "slb.server.getAll", sessionID)
 	if errGet != nil {
 		return list
 	}
@@ -189,10 +190,10 @@ func a10ServerList(debugf FuncPrintf, host, sessionId string) []A10Server {
 	return list
 }
 
-func a10ServiceGroupList(debugf FuncPrintf, host, sessionId string) []A10ServiceGroup {
+func a10ServiceGroupList(debugf FuncPrintf, host, sessionID string) []A10ServiceGroup {
 	var list []A10ServiceGroup
 
-	groups, errGet := a10SessionGet(debugf, host, "slb.service_group.getAll", sessionId)
+	groups, errGet := a10SessionGet(debugf, host, "slb.service_group.getAll", sessionID)
 	if errGet != nil {
 		return list
 	}
@@ -234,10 +235,10 @@ func a10ServiceGroupList(debugf FuncPrintf, host, sessionId string) []A10Service
 	return list
 }
 
-func a10VirtualServerList(debugf FuncPrintf, host, sessionId string) []A10VServer {
+func a10VirtualServerList(debugf FuncPrintf, host, sessionID string) []A10VServer {
 	var list []A10VServer
 
-	bodyVirtServers, errGet := a10SessionGet(debugf, host, "slb.virtual_server.getAll", sessionId)
+	bodyVirtServers, errGet := a10SessionGet(debugf, host, "slb.virtual_server.getAll", sessionID)
 	if errGet != nil {
 		return list
 	}
@@ -287,9 +288,9 @@ func a10VirtualServerList(debugf FuncPrintf, host, sessionId string) []A10VServe
 func jsonExtractList(debugf FuncPrintf, body []byte, listName string) []interface{} {
 	me := "extractList"
 	tab := map[string]interface{}{}
-	errJson := json.Unmarshal(body, &tab)
-	if errJson != nil {
-		log.Printf(me+": list=%s json error: %v", listName, errJson)
+	errJSON := json.Unmarshal(body, &tab)
+	if errJSON != nil {
+		log.Printf(me+": list=%s json error: %v", listName, errJSON)
 		return nil
 	}
 	list, found := tab[listName]
@@ -305,9 +306,9 @@ func jsonExtractList(debugf FuncPrintf, body []byte, listName string) []interfac
 	return slice
 }
 
-func a10SessionGet(debugf FuncPrintf, host, method, sessionId string) ([]byte, error) {
+func a10SessionGet(debugf FuncPrintf, host, method, sessionID string) ([]byte, error) {
 	me := "a10SessionGet"
-	api := a10v21urlSession(host, method, sessionId)
+	api := a10v21urlSession(host, method, sessionID)
 	body, err := httpGet(api)
 	if err != nil {
 		debugf(me+": api=[%s] error: %v", api, err)
@@ -315,12 +316,12 @@ func a10SessionGet(debugf FuncPrintf, host, method, sessionId string) ([]byte, e
 	return body, err
 }
 
-func a10v21Close(host, sessionId string) error {
+func a10v21Close(host, sessionID string) error {
 
-	api := a10v21urlSession(host, "session.close", sessionId)
+	api := a10v21urlSession(host, "session.close", sessionID)
 
 	format := `{"session_id": "%s"}`
-	payload := fmt.Sprintf(format, sessionId)
+	payload := fmt.Sprintf(format, sessionID)
 
 	_, errPost := httpPostString(api, "application/json", payload)
 
@@ -336,9 +337,9 @@ func a10v21Auth(host, username, password string) (string, error) {
 
 	response := map[string]interface{}{}
 
-	errJson := json.Unmarshal(body, &response)
-	if errJson != nil {
-		return "", errJson
+	errJSON := json.Unmarshal(body, &response)
+	if errJSON != nil {
+		return "", errJSON
 	}
 
 	id, found := response["session_id"]
@@ -346,12 +347,12 @@ func a10v21Auth(host, username, password string) (string, error) {
 		return "", fmt.Errorf("auth response missing session_id")
 	}
 
-	session_id, isStr := id.(string)
+	sessionID, isStr := id.(string)
 	if !isStr {
 		return "", fmt.Errorf("auth session_id not a string")
 	}
 
-	return session_id, nil
+	return sessionID, nil
 }
 
 func v21auth(host, username, password string) ([]byte, error) {

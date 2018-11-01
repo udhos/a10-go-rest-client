@@ -7,6 +7,8 @@ build() {
         go tool fix $path
         go tool vet $path
 
+	hash golint && golint $path
+
         CGO_ENABLED=0 go test $path
         CGO_ENABLED=0 go install $path
 }
