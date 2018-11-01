@@ -16,13 +16,19 @@ A10 golang rest client
 
     import "github.com/udhos/a10-go-rest-client/a10go"
 
-    c := a10go.New(host, a10go.Options{Debug: true})
-    errLogin := c.Login(user, pass)
+    // (...)
+
+    options := a10go.Options{Debug: true} // client options
+    c := a10go.New(host, options) // create api client
+
+    errLogin := c.Login(user, pass) // open session
     if errLogin != nil {
         fmt.Printf("login failure: %v", errLogin)
         return
     }
     vServers := c.VirtualServerList()
+
+    c.Logout() // close session
 
 See GoDoc: [http://godoc.org/github.com/udhos/a10-go-rest-client/a10go](http://godoc.org/github.com/udhos/a10-go-rest-client/a10go)
 
