@@ -12,11 +12,13 @@ type Client struct {
 	opt       Options
 }
 
-type funcPrintf func(format string, v ...interface{})
+// FuncPrintf is function type for debug Printf
+type FuncPrintf func(format string, v ...interface{})
 
+// Options specify parameters for the api client
 type Options struct {
-	Debug       bool
-	DebugPrintf funcPrintf
+	Debug       bool       // enable debugging
+	DebugPrintf FuncPrintf // custom Printf function for debugging
 }
 
 func (c *Client) debugf(format string, v ...interface{}) {
@@ -25,6 +27,7 @@ func (c *Client) debugf(format string, v ...interface{}) {
 	}
 }
 
+// New creates api client
 func New(host string, options Options) *Client {
 	if options.DebugPrintf == nil {
 		options.DebugPrintf = log.Printf // default debug Printf
@@ -32,32 +35,39 @@ func New(host string, options Options) *Client {
 	return &Client{host: host, opt: options}
 }
 
+// Login opens a new session
 func (c *Client) Login(username, password string) error {
 	var errAuth error
 	c.sessionId, errAuth = a10v21Auth(c.host, username, password)
 	return errAuth
 }
 
+// Logout closes an existing session
 func (c *Client) Logout() error {
 	return a10v21Close(c.host, c.sessionId)
 }
 
+// Get runs GET against an specific api method
 func (c *Client) Get(method string) ([]byte, error) {
 	return a10SessionGet(c.debugf, c.host, method, c.sessionId)
 }
 
+// ServerList retrieves the full server list
 func (c *Client) ServerList() []A10Server {
 	return a10ServerList(c.debugf, c.host, c.sessionId)
 }
 
+// ServerList retrieves the full server group list
 func (c *Client) ServiceGroupList() []A10ServiceGroup {
 	return a10ServiceGroupList(c.debugf, c.host, c.sessionId)
 }
 
+// ServerList retrieves the full virtual server list
 func (c *Client) VirtualServerList() []A10VServer {
 	return a10VirtualServerList(c.debugf, c.host, c.sessionId)
 }
 
+// A10VServer is a virtual server
 type A10VServer struct {
 	Name          string
 	Address       string
@@ -65,16 +75,19 @@ type A10VServer struct {
 	ServiceGroups []string
 }
 
+// A10ServiceGroup is a service group
 type A10ServiceGroup struct {
 	Name    string
 	Members []A10SGMember
 }
 
+// A10SGMember is a service group member
 type A10SGMember struct {
 	Name string
 	Port string
 }
 
+// A10Server is a server
 type A10Server struct {
 	Name  string
 	Host  string
@@ -108,7 +121,7 @@ func a10v21urlSession(host, method, sessionId string) string {
 	return a10v21url(host, method) + "&session_id=" + sessionId
 }
 
-func mapGetStr(debugf funcPrintf, tab map[string]interface{}, key string) string {
+func mapGetStr(debugf FuncPrintf, tab map[string]interface{}, key string) string {
 	value, found := tab[key]
 	if !found {
 		debugf("mapGetStr: key=[%s] not found", key)
@@ -122,7 +135,7 @@ func mapGetStr(debugf funcPrintf, tab map[string]interface{}, key string) string
 	return str
 }
 
-func mapGetValue(debugf funcPrintf, tab map[string]interface{}, key string) string {
+func mapGetValue(debugf FuncPrintf, tab map[string]interface{}, key string) string {
 	value, found := tab[key]
 	if !found {
 		debugf("mapGetValue: key=[%s] not found", key)
@@ -131,7 +144,7 @@ func mapGetValue(debugf funcPrintf, tab map[string]interface{}, key string) stri
 	return fmt.Sprintf("%v", value)
 }
 
-func a10ServerList(debugf funcPrintf, host, sessionId string) []A10Server {
+func a10ServerList(debugf FuncPrintf, host, sessionId string) []A10Server {
 	var list []A10Server
 
 	servers, errGet := a10SessionGet(debugf, host, "slb.server.getAll", sessionId)
@@ -176,7 +189,7 @@ func a10ServerList(debugf funcPrintf, host, sessionId string) []A10Server {
 	return list
 }
 
-func a10ServiceGroupList(debugf funcPrintf, host, sessionId string) []A10ServiceGroup {
+func a10ServiceGroupList(debugf FuncPrintf, host, sessionId string) []A10ServiceGroup {
 	var list []A10ServiceGroup
 
 	groups, errGet := a10SessionGet(debugf, host, "slb.service_group.getAll", sessionId)
@@ -221,7 +234,7 @@ func a10ServiceGroupList(debugf funcPrintf, host, sessionId string) []A10Service
 	return list
 }
 
-func a10VirtualServerList(debugf funcPrintf, host, sessionId string) []A10VServer {
+func a10VirtualServerList(debugf FuncPrintf, host, sessionId string) []A10VServer {
 	var list []A10VServer
 
 	bodyVirtServers, errGet := a10SessionGet(debugf, host, "slb.virtual_server.getAll", sessionId)
@@ -271,7 +284,7 @@ func a10VirtualServerList(debugf funcPrintf, host, sessionId string) []A10VServe
 	return list
 }
 
-func jsonExtractList(debugf funcPrintf, body []byte, listName string) []interface{} {
+func jsonExtractList(debugf FuncPrintf, body []byte, listName string) []interface{} {
 	me := "extractList"
 	tab := map[string]interface{}{}
 	errJson := json.Unmarshal(body, &tab)
@@ -292,7 +305,7 @@ func jsonExtractList(debugf funcPrintf, body []byte, listName string) []interfac
 	return slice
 }
 
-func a10SessionGet(debugf funcPrintf, host, method, sessionId string) ([]byte, error) {
+func a10SessionGet(debugf FuncPrintf, host, method, sessionId string) ([]byte, error) {
 	me := "a10SessionGet"
 	api := a10v21urlSession(host, method, sessionId)
 	body, err := httpGet(api)
