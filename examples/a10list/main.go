@@ -20,7 +20,11 @@ func main() {
 	user := os.Args[2]
 	pass := os.Args[3]
 
-	c := a10go.New(host)
+	debug := os.Getenv("DEBUG") != ""
+
+	fmt.Printf("%s: debug=%v DEBUG=[%s]\n", me, debug, os.Getenv("DEBUG"))
+
+	c := a10go.New(host, a10go.Options{Debug: debug})
 
 	errLogin := c.Login(user, pass)
 	if errLogin != nil {
@@ -28,7 +32,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("virtual servers:")
+	fmt.Printf("virtual servers:\n")
 	vServers := c.VirtualServerList()
 	litter.Dump(vServers)
 

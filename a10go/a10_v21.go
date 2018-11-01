@@ -6,39 +6,56 @@ import (
 	"log"
 )
 
-type A10Client struct {
+type Client struct {
 	host      string
 	sessionId string
+	opt       Options
 }
 
-func New(host string) *A10Client {
-	return &A10Client{host: host}
+type funcPrintf func(format string, v ...interface{})
+
+type Options struct {
+	Debug       bool
+	DebugPrintf funcPrintf
 }
 
-func (c *A10Client) Login(username, password string) error {
+func (c *Client) debugf(format string, v ...interface{}) {
+	if c.opt.Debug {
+		c.opt.DebugPrintf("DEBUG "+format, v...)
+	}
+}
+
+func New(host string, options Options) *Client {
+	if options.DebugPrintf == nil {
+		options.DebugPrintf = log.Printf // default debug Printf
+	}
+	return &Client{host: host, opt: options}
+}
+
+func (c *Client) Login(username, password string) error {
 	var errAuth error
 	c.sessionId, errAuth = a10v21Auth(c.host, username, password)
 	return errAuth
 }
 
-func (c *A10Client) Logout() error {
+func (c *Client) Logout() error {
 	return a10v21Close(c.host, c.sessionId)
 }
 
-func (c *A10Client) Get(method string) ([]byte, error) {
-	return a10SessionGet(c.host, method, c.sessionId)
+func (c *Client) Get(method string) ([]byte, error) {
+	return a10SessionGet(c.debugf, c.host, method, c.sessionId)
 }
 
-func (c *A10Client) ServerList() []A10Server {
-	return a10ServerList(c.host, c.sessionId)
+func (c *Client) ServerList() []A10Server {
+	return a10ServerList(c.debugf, c.host, c.sessionId)
 }
 
-func (c *A10Client) ServiceGroupList() []A10ServiceGroup {
-	return a10ServiceGroupList(c.host, c.sessionId)
+func (c *Client) ServiceGroupList() []A10ServiceGroup {
+	return a10ServiceGroupList(c.debugf, c.host, c.sessionId)
 }
 
-func (c *A10Client) VirtualServerList() []A10VServer {
-	return a10VirtualServerList(c.host, c.sessionId)
+func (c *Client) VirtualServerList() []A10VServer {
+	return a10VirtualServerList(c.debugf, c.host, c.sessionId)
 }
 
 type A10VServer struct {
@@ -91,40 +108,38 @@ func a10v21urlSession(host, method, sessionId string) string {
 	return a10v21url(host, method) + "&session_id=" + sessionId
 }
 
-func mapGetStr(tab map[string]interface{}, key string) string {
+func mapGetStr(debugf funcPrintf, tab map[string]interface{}, key string) string {
 	value, found := tab[key]
 	if !found {
-		log.Printf("mapGetStr: key=[%s] not found", key)
+		debugf("mapGetStr: key=[%s] not found", key)
 		return ""
 	}
 	str, isStr := value.(string)
 	if !isStr {
-		log.Printf("mapGetStr: key=[%s] non-string value: [%v]", key, value)
+		debugf("mapGetStr: key=[%s] non-string value: [%v]", key, value)
 		return ""
 	}
 	return str
 }
 
-func mapGetValue(tab map[string]interface{}, key string) string {
+func mapGetValue(debugf funcPrintf, tab map[string]interface{}, key string) string {
 	value, found := tab[key]
 	if !found {
-		log.Printf("mapGetValue: key=[%s] not found", key)
+		debugf("mapGetValue: key=[%s] not found", key)
 		return ""
 	}
 	return fmt.Sprintf("%v", value)
 }
 
-func a10ServerList(host, sessionId string) []A10Server {
+func a10ServerList(debugf funcPrintf, host, sessionId string) []A10Server {
 	var list []A10Server
 
-	servers, errGet := a10SessionGet(host, "slb.server.getAll", sessionId)
+	servers, errGet := a10SessionGet(debugf, host, "slb.server.getAll", sessionId)
 	if errGet != nil {
 		return list
 	}
 
-	//log.Printf("servers: [%s]", string(servers))
-
-	sList := jsonExtractList(servers, "server_list")
+	sList := jsonExtractList(debugf, servers, "server_list")
 	if sList == nil {
 		return list
 	}
@@ -135,11 +150,11 @@ func a10ServerList(host, sessionId string) []A10Server {
 			continue
 		}
 
-		name := mapGetStr(sMap, "name")
-		host := mapGetStr(sMap, "host")
+		name := mapGetStr(debugf, sMap, "name")
+		host := mapGetStr(debugf, sMap, "host")
 		server := A10Server{Name: name, Host: host}
 
-		log.Printf("server: %s", name)
+		debugf("server: %s", name)
 
 		portList := sMap["port_list"]
 		pList, isList := portList.([]interface{})
@@ -151,7 +166,7 @@ func a10ServerList(host, sessionId string) []A10Server {
 			if !isPMap {
 				continue
 			}
-			portNum := mapGetValue(pMap, "port_num")
+			portNum := mapGetValue(debugf, pMap, "port_num")
 			server.Ports = append(server.Ports, portNum)
 		}
 
@@ -161,17 +176,15 @@ func a10ServerList(host, sessionId string) []A10Server {
 	return list
 }
 
-func a10ServiceGroupList(host, sessionId string) []A10ServiceGroup {
+func a10ServiceGroupList(debugf funcPrintf, host, sessionId string) []A10ServiceGroup {
 	var list []A10ServiceGroup
 
-	groups, errGet := a10SessionGet(host, "slb.service_group.getAll", sessionId)
+	groups, errGet := a10SessionGet(debugf, host, "slb.service_group.getAll", sessionId)
 	if errGet != nil {
 		return list
 	}
 
-	//log.Printf("groups: [%s]", string(groups))
-
-	sgList := jsonExtractList(groups, "service_group_list")
+	sgList := jsonExtractList(debugf, groups, "service_group_list")
 	if sgList == nil {
 		return list
 	}
@@ -182,10 +195,10 @@ func a10ServiceGroupList(host, sessionId string) []A10ServiceGroup {
 			continue
 		}
 
-		name := mapGetStr(sgMap, "name")
+		name := mapGetStr(debugf, sgMap, "name")
 		group := A10ServiceGroup{Name: name}
 
-		log.Printf("service group: %s", name)
+		debugf("service group: %s", name)
 
 		memberList := sgMap["member_list"]
 		mList, isList := memberList.([]interface{})
@@ -195,8 +208,8 @@ func a10ServiceGroupList(host, sessionId string) []A10ServiceGroup {
 				if !isMMap {
 					continue
 				}
-				memberName := mapGetStr(mMap, "server")
-				memberPort := mapGetValue(mMap, "port")
+				memberName := mapGetStr(debugf, mMap, "server")
+				memberPort := mapGetValue(debugf, mMap, "port")
 				member := A10SGMember{Name: memberName, Port: memberPort}
 				group.Members = append(group.Members, member)
 			}
@@ -208,15 +221,15 @@ func a10ServiceGroupList(host, sessionId string) []A10ServiceGroup {
 	return list
 }
 
-func a10VirtualServerList(host, sessionId string) []A10VServer {
+func a10VirtualServerList(debugf funcPrintf, host, sessionId string) []A10VServer {
 	var list []A10VServer
 
-	bodyVirtServers, errGet := a10SessionGet(host, "slb.virtual_server.getAll", sessionId)
+	bodyVirtServers, errGet := a10SessionGet(debugf, host, "slb.virtual_server.getAll", sessionId)
 	if errGet != nil {
 		return list
 	}
 
-	vsList := jsonExtractList(bodyVirtServers, "virtual_server_list")
+	vsList := jsonExtractList(debugf, bodyVirtServers, "virtual_server_list")
 	if vsList == nil {
 		return list
 	}
@@ -227,10 +240,10 @@ func a10VirtualServerList(host, sessionId string) []A10VServer {
 			continue
 		}
 
-		name := mapGetStr(vsMap, "name")
-		addr := mapGetStr(vsMap, "address")
+		name := mapGetStr(debugf, vsMap, "name")
+		addr := mapGetStr(debugf, vsMap, "address")
 
-		log.Printf("virtual server: %s", name)
+		debugf("virtual server: %s", name)
 
 		vServer := A10VServer{Name: name, Address: addr}
 
@@ -244,12 +257,12 @@ func a10VirtualServerList(host, sessionId string) []A10VServer {
 			if !isPMap {
 				continue
 			}
-			pStr := mapGetValue(pMap, "port")
-			sGroup := mapGetStr(pMap, "service_group")
+			pStr := mapGetValue(debugf, pMap, "port")
+			sGroup := mapGetStr(debugf, pMap, "service_group")
 
 			vServer.Port = pStr
 			vServer.ServiceGroups = append(vServer.ServiceGroups, sGroup)
-			log.Printf("virtual server: %s service_group=%s", name, sGroup)
+			debugf("virtual server: %s service_group=%s", name, sGroup)
 		}
 
 		list = append(list, vServer)
@@ -258,7 +271,7 @@ func a10VirtualServerList(host, sessionId string) []A10VServer {
 	return list
 }
 
-func jsonExtractList(body []byte, listName string) []interface{} {
+func jsonExtractList(debugf funcPrintf, body []byte, listName string) []interface{} {
 	me := "extractList"
 	tab := map[string]interface{}{}
 	errJson := json.Unmarshal(body, &tab)
@@ -268,23 +281,23 @@ func jsonExtractList(body []byte, listName string) []interface{} {
 	}
 	list, found := tab[listName]
 	if !found {
-		log.Printf(me+": list=%s not found", listName)
+		debugf(me+": list=%s not found", listName)
 		return nil
 	}
 	slice, isSlice := list.([]interface{})
 	if !isSlice {
-		log.Printf(me+": list=%s not an slice", listName)
+		debugf(me+": list=%s not an slice", listName)
 		return nil
 	}
 	return slice
 }
 
-func a10SessionGet(host, method, sessionId string) ([]byte, error) {
+func a10SessionGet(debugf funcPrintf, host, method, sessionId string) ([]byte, error) {
 	me := "a10SessionGet"
 	api := a10v21urlSession(host, method, sessionId)
 	body, err := httpGet(api)
 	if err != nil {
-		log.Printf(me+": api=[%s] error: %v", api, err)
+		debugf(me+": api=[%s] error: %v", api, err)
 	}
 	return body, err
 }
