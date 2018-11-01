@@ -1,5 +1,5 @@
 [![license](http://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/udhos/a10-go-rest-client/blob/master/LICENSE)
-[![GoDoc](https://godoc.org/github.com/udhos/a10-go-rest-client?status.svg)](http://godoc.org/github.com/udhos/a10-go-rest-client)
+[![GoDoc](https://godoc.org/github.com/udhos/a10-go-rest-client?status.svg)](http://godoc.org/github.com/udhos/a10-go-rest-client/a10go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/udhos/a10-go-rest-client)](https://goreportcard.com/report/github.com/udhos/a10-go-rest-client)
 
 # a10-go-rest-client
@@ -24,6 +24,6 @@ A10 golang rest client
     }
     vServers := c.VirtualServerList()
 
-See GoDoc: [a10-go-rest-client](http://godoc.org/github.com/udhos/a10-go-rest-client)
+See GoDoc: [http://godoc.org/github.com/udhos/a10-go-rest-client/a10go](http://godoc.org/github.com/udhos/a10-go-rest-client/a10go)
 
 See example: [a10list](https://github.com/udhos/a10-go-rest-client/blob/master/examples/a10list/main.go)
