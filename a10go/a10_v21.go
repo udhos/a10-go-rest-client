@@ -58,14 +58,68 @@ func (c *Client) Post(method, body string) ([]byte, error) {
 	return a10SessionPost(c.debugf, c.host, method, c.sessionID, body)
 }
 
+/*
 // Delete calls http DELETE for an specific api method
 func (c *Client) Delete(method, body string) ([]byte, error) {
 	return a10SessionDelete(c.debugf, c.host, method, c.sessionID, body)
 }
+*/
 
 // ServerList retrieves the full server list
 func (c *Client) ServerList() []A10Server {
 	return a10ServerList(c.debugf, c.host, c.sessionID)
+}
+
+// ServerCreate creates new server
+func (c *Client) ServerCreate(name, host string, ports []string) error {
+
+	format := `{
+            "server": {
+                "name": "%s",
+                "host": "%s",
+                "status": 1,
+		"port_list": [%s]
+            }
+        }
+`
+
+	portList := ""
+	for _, p := range ports {
+		proto := "2"
+		c.debugf("ServerCreate: FIXME: using protocol=%s", proto)
+		portFmt := portFormat(p, proto)
+		if portList == "" {
+			portList = portFmt
+			continue
+		}
+		portList += "," + portFmt
+	}
+
+	payload := fmt.Sprintf(format, name, host, portList)
+
+	body, errPost := c.Post("slb.server.create", payload)
+
+	c.debugf("ServerCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
+
+	return errPost
+}
+
+func portFormat(port, protocol string) string {
+	return fmt.Sprintf(`{"port_num": %s, "protocol": %s}`, port, protocol)
+}
+
+// ServerDelete deletes an existing server
+func (c *Client) ServerDelete(name string) error {
+
+	format := `{ "server": { "name": "%s" } }`
+
+	payload := fmt.Sprintf(format, name)
+
+	body, errDelete := c.Post("slb.server.delete", payload)
+
+	c.debugf("ServerDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+
+	return errDelete
 }
 
 // ServiceGroupList retrieves the full server group list
@@ -102,7 +156,13 @@ type A10SGMember struct {
 type A10Server struct {
 	Name  string
 	Host  string
-	Ports []string
+	Ports []A10Port
+}
+
+// A10Port defines port/protocol
+type A10Port struct {
+	Number   string
+	Protocol string
 }
 
 // V3:
@@ -191,7 +251,8 @@ func a10ServerList(debugf FuncPrintf, host, sessionID string) []A10Server {
 				continue
 			}
 			portNum := mapGetValue(debugf, pMap, "port_num")
-			server.Ports = append(server.Ports, portNum)
+			proto := mapGetValue(debugf, pMap, "protocol")
+			server.Ports = append(server.Ports, A10Port{Number: portNum, Protocol: proto})
 		}
 
 		list = append(list, server)
@@ -336,6 +397,7 @@ func a10SessionPost(debugf FuncPrintf, host, method, sessionID, body string) ([]
 	return respBody, err
 }
 
+/*
 func a10SessionDelete(debugf FuncPrintf, host, method, sessionID, body string) ([]byte, error) {
 	me := "a10SessionDelete"
 	api := a10v21urlSession(host, method, sessionID)
@@ -345,6 +407,7 @@ func a10SessionDelete(debugf FuncPrintf, host, method, sessionID, body string) (
 	}
 	return respBody, err
 }
+*/
 
 const contentTypeJSON = "application/json"
 

@@ -32,12 +32,22 @@ func main() {
 		return
 	}
 
-	fmt.Printf("virtual servers:\n")
-	vServers := c.VirtualServerList()
-	litter.Dump(vServers)
-
-	fmt.Printf("servers:\n")
+	fmt.Printf("before servers:\n")
 	servers := c.ServerList()
+	litter.Dump(servers)
+
+	errCreate := c.ServerCreate("a10server_test00", "99.99.99.99", []string{"8888", "9999"})
+	fmt.Printf("creating server: error:%v\n", errCreate)
+
+	fmt.Printf("after servers:\n")
+	servers = c.ServerList()
+	litter.Dump(servers)
+
+	errDel := c.ServerDelete("a10server_test00")
+	fmt.Printf("deleting server: error:%v\n", errDel)
+
+	fmt.Printf("final servers:\n")
+	servers = c.ServerList()
 	litter.Dump(servers)
 
 	errLogout := c.Logout()
