@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
+	"unicode"
 )
 
 // Client is an api client
@@ -85,9 +87,8 @@ func (c *Client) ServerCreate(name, host string, ports []string) error {
 
 	portList := ""
 	for _, p := range ports {
-		proto := "2"
-		c.debugf("ServerCreate: FIXME: using protocol=%s", proto)
-		portFmt := portFormat(p, proto)
+		portName, portProto := splitPortProto(c.debugf, p)
+		portFmt := portFormat(portName, portProto)
 		if portList == "" {
 			portList = portFmt
 			continue
@@ -102,6 +103,24 @@ func (c *Client) ServerCreate(name, host string, ports []string) error {
 	c.debugf("ServerCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
 
 	return errPost
+}
+
+func splitPortProto(debugf FuncPrintf, portProto string) (string, string) {
+	s := strings.FieldsFunc(portProto, nonAlphaNum)
+	count := len(s)
+	switch {
+	case count < 1:
+		return "", ""
+	case count < 2:
+		proto := "2"
+		debugf("splitPortProto(%s): defaulting to port protocol=%s", portProto, proto)
+		return s[0], proto
+	}
+	return s[0], s[1]
+}
+
+func nonAlphaNum(c rune) bool {
+	return !unicode.IsLetter(c) && !unicode.IsNumber(c)
 }
 
 func portFormat(port, protocol string) string {
