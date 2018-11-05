@@ -106,21 +106,19 @@ func (c *Client) ServerCreate(name, host string, ports []string) error {
 }
 
 func splitPortProto(debugf FuncPrintf, portProto string) (string, string) {
-	s := strings.FieldsFunc(portProto, nonAlphaNum)
+	s := strings.FieldsFunc(portProto, isSep)
 	count := len(s)
 	switch {
 	case count < 1:
-		return "", ""
+		proto := "2"
+		debugf("splitPortProto(%s): defaulting to port protocol=%s", portProto, proto)
+		return "", proto
 	case count < 2:
 		proto := "2"
 		debugf("splitPortProto(%s): defaulting to port protocol=%s", portProto, proto)
 		return s[0], proto
 	}
 	return s[0], s[1]
-}
-
-func nonAlphaNum(c rune) bool {
-	return !unicode.IsLetter(c) && !unicode.IsNumber(c)
 }
 
 func portFormat(port, protocol string) string {
@@ -147,13 +145,78 @@ func (c *Client) ServiceGroupList() []A10ServiceGroup {
 }
 
 // ServiceGroupCreate creates new service group
-func (c *Client) ServiceGroupCreate(name string, members []string) error {
-	return fmt.Errorf("ServiceGroupCreate: FIXME WRITEME")
+func (c *Client) ServiceGroupCreate(name, protocol string, members []string) error {
+
+	format := `{
+            "service_group": {
+                "name": "%s",
+                "protocol": %s,
+		"member_list": [%s]
+            }
+        }
+`
+
+	serverList := ""
+	for _, s := range members {
+		serverName, serverPort, serverProto := splitServerPortProto(c.debugf, s)
+		serverFmt := serverFormat(serverName, serverPort, serverProto)
+		if serverList == "" {
+			serverList = serverFmt
+			continue
+		}
+		serverList += "," + serverFmt
+	}
+
+	payload := fmt.Sprintf(format, name, protocol, serverList)
+
+	body, errPost := c.Post("slb.service_group.create", payload)
+
+	c.debugf("ServiceGroupCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
+
+	return errPost
+}
+
+func splitServerPortProto(debugf FuncPrintf, serverPort string) (string, string, string) {
+	s := strings.FieldsFunc(serverPort, isSep)
+	count := len(s)
+	if count < 1 {
+		proto := "2"
+		debugf("splitServerPortProto(%s): count=%d defaulting to port protocol=%s", serverPort, count, proto)
+		return "", "", proto
+	}
+	if count < 2 {
+		proto := "2"
+		debugf("splitServerPortProto(%s): count=%d defaulting to port protocol=%s", serverPort, count, proto)
+		return s[0], "", proto
+	}
+	if count < 3 {
+		proto := "2"
+		debugf("splitServerPortProto(%s): count=%d defaulting to port protocol=%s", serverPort, count, proto)
+		return s[0], s[1], proto
+	}
+	return s[0], s[1], s[2]
+}
+
+func isSep(c rune) bool {
+	return c == ',' || unicode.IsSpace(c)
+}
+
+func serverFormat(name, port, proto string) string {
+	return fmt.Sprintf(`{"server": "%s", "port": %s, "protocol": %s}`, name, port, proto)
 }
 
 // ServiceGroupDelete deletes an existing service group
 func (c *Client) ServiceGroupDelete(name string) error {
-	return fmt.Errorf("ServiceGroupDelete: FIXME WRITEME")
+
+	format := `{ "service_group": { "name": "%s" } }`
+
+	payload := fmt.Sprintf(format, name)
+
+	body, errDelete := c.Post("slb.service_group.delete", payload)
+
+	c.debugf("ServiceGroupDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+
+	return errDelete
 }
 
 // VirtualServerList retrieves the full virtual server list

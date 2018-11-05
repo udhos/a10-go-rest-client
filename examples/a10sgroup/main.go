@@ -41,13 +41,18 @@ func main() {
 	var serverList []string
 	for i := 0; i < serverCount; i++ {
 		s := fmt.Sprintf("a10sgroup_test%02d", i)
-		a := fmt.Sprintf("99.99.99.%2d", i)
+		a := fmt.Sprintf("99.99.99.%d", i)
 		errCreate := c.ServerCreate(s, a, []string{"8888", "9999"})
-		fmt.Printf("creating server=[%s] error:%v\n", s, errCreate)
+		fmt.Printf("creating %d/%d server=[%s] error:%v\n", i, serverCount, s, errCreate)
 		if errCreate != nil {
 			return
 		}
 		serverList = append(serverList, s)
+	}
+
+	var serverPortList []string
+	for _, s := range serverList {
+		serverPortList = append(serverPortList, s+",1111")
 	}
 
 	fmt.Printf("before service groups:\n")
@@ -56,7 +61,8 @@ func main() {
 
 	sgName := "a10sg_test00"
 
-	errCreate := c.ServiceGroupCreate(sgName, serverList)
+	proto := "2" // proto=TCP
+	errCreate := c.ServiceGroupCreate(sgName, proto, serverPortList)
 	fmt.Printf("creating service group: error:%v\n", errCreate)
 
 	fmt.Printf("after service groups:\n")
@@ -70,9 +76,9 @@ func main() {
 	sgroups = c.ServiceGroupList()
 	litter.Dump(sgroups)
 
-	for _, s := range serverList {
+	for i, s := range serverList {
 		errDelete := c.ServerDelete(s)
-		fmt.Printf("deleting server=[%s] error:%v\n", s, errDelete)
+		fmt.Printf("deleting %d/%d server=[%s] error:%v\n", i, serverCount, s, errDelete)
 	}
 
 	errLogout := c.Logout()
