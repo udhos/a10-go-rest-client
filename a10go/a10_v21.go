@@ -48,9 +48,19 @@ func (c *Client) Logout() error {
 	return a10v21Close(c.host, c.sessionID)
 }
 
-// Get runs GET against an specific api method
+// Get calls http GET for an specific api method
 func (c *Client) Get(method string) ([]byte, error) {
 	return a10SessionGet(c.debugf, c.host, method, c.sessionID)
+}
+
+// Post calls http POST for an specific api method
+func (c *Client) Post(method, body string) ([]byte, error) {
+	return a10SessionPost(c.debugf, c.host, method, c.sessionID, body)
+}
+
+// Delete calls http DELETE for an specific api method
+func (c *Client) Delete(method, body string) ([]byte, error) {
+	return a10SessionDelete(c.debugf, c.host, method, c.sessionID, body)
 }
 
 // ServerList retrieves the full server list
@@ -316,6 +326,28 @@ func a10SessionGet(debugf FuncPrintf, host, method, sessionID string) ([]byte, e
 	return body, err
 }
 
+func a10SessionPost(debugf FuncPrintf, host, method, sessionID, body string) ([]byte, error) {
+	me := "a10SessionPost"
+	api := a10v21urlSession(host, method, sessionID)
+	respBody, err := httpPostString(api, contentTypeJSON, body)
+	if err != nil {
+		debugf(me+": api=[%s] error: %v", api, err)
+	}
+	return respBody, err
+}
+
+func a10SessionDelete(debugf FuncPrintf, host, method, sessionID, body string) ([]byte, error) {
+	me := "a10SessionDelete"
+	api := a10v21urlSession(host, method, sessionID)
+	respBody, err := httpDeleteString(api, contentTypeJSON, body)
+	if err != nil {
+		debugf(me+": api=[%s] error: %v", api, err)
+	}
+	return respBody, err
+}
+
+const contentTypeJSON = "application/json"
+
 func a10v21Close(host, sessionID string) error {
 
 	api := a10v21urlSession(host, "session.close", sessionID)
@@ -323,7 +355,7 @@ func a10v21Close(host, sessionID string) error {
 	format := `{"session_id": "%s"}`
 	payload := fmt.Sprintf(format, sessionID)
 
-	_, errPost := httpPostString(api, "application/json", payload)
+	_, errPost := httpPostString(api, contentTypeJSON, payload)
 
 	return errPost
 }
@@ -362,5 +394,5 @@ func v21auth(host, username, password string) ([]byte, error) {
 	format := `{ "username": "%s", "password": "%s" }`
 	payload := fmt.Sprintf(format, username, password)
 
-	return httpPostString(api, "application/json", payload)
+	return httpPostString(api, contentTypeJSON, payload)
 }

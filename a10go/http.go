@@ -40,14 +40,54 @@ func httpClient() *http.Client {
 	}
 }
 
-func httpPostString(url string, contentType string, s string) ([]byte, error) {
+func httpPostString(url, contentType, s string) ([]byte, error) {
+	return httpPost(url, contentType, bytes.NewBufferString(s))
+}
+
+func httpDeleteString(url, contentType, s string) ([]byte, error) {
+	return httpDelete(url, contentType, bytes.NewBufferString(s))
+}
+
+func httpPost(url, contentType string, body io.Reader) ([]byte, error) {
 	c := httpClient()
-	return clientPost(c, url, contentType, bytes.NewBufferString(s))
+	return clientPost(c, url, contentType, body)
 }
 
 func httpGet(url string) ([]byte, error) {
 	c := httpClient()
 	return clientGet(c, url)
+}
+
+func httpDelete(url string, contentType string, body io.Reader) ([]byte, error) {
+	c := httpClient()
+	return clientDelete(c, url, contentType, body)
+}
+
+func clientDelete(c *http.Client, url, bodyContentType string, body io.Reader) ([]byte, error) {
+
+	req, errNew := http.NewRequest("DELETE", url, body)
+	if errNew != nil {
+		return nil, errNew
+	}
+	req.Header.Set("Content-Type", bodyContentType)
+
+	resp, errDel := c.Do(req)
+	if errDel != nil {
+		return nil, errDel
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("httpDelete: bad status: %d", resp.StatusCode)
+	}
+
+	info, errRead := ioutil.ReadAll(resp.Body)
+	if errRead != nil {
+		return nil, fmt.Errorf("httpDelete: read all: url=%v: %v", url, errRead)
+	}
+
+	return info, errRead
 }
 
 func clientPost(c *http.Client, url string, contentType string, r io.Reader) ([]byte, error) {
