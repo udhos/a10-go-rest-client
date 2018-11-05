@@ -16,4 +16,5 @@ build() {
 build ./a10go
 build ./examples/a10list
 build ./examples/a10server
+build ./examples/a10sgroup
 

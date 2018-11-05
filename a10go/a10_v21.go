@@ -146,6 +146,16 @@ func (c *Client) ServiceGroupList() []A10ServiceGroup {
 	return a10ServiceGroupList(c.debugf, c.host, c.sessionID)
 }
 
+// ServiceGroupCreate creates new service group
+func (c *Client) ServiceGroupCreate(name string, members []string) error {
+	return fmt.Errorf("ServiceGroupCreate: FIXME WRITEME")
+}
+
+// ServiceGroupDelete deletes an existing service group
+func (c *Client) ServiceGroupDelete(name string) error {
+	return fmt.Errorf("ServiceGroupDelete: FIXME WRITEME")
+}
+
 // VirtualServerList retrieves the full virtual server list
 func (c *Client) VirtualServerList() []A10VServer {
 	return a10VirtualServerList(c.debugf, c.host, c.sessionID)
