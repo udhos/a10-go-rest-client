@@ -36,6 +36,10 @@ func main() {
 	vServers := c.VirtualServerList()
 	litter.Dump(vServers)
 
+	fmt.Printf("service groups:\n")
+	sgroups := c.ServiceGroupList()
+	litter.Dump(sgroups)
+
 	fmt.Printf("servers:\n")
 	servers := c.ServerList()
 	litter.Dump(servers)
