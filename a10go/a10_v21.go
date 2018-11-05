@@ -208,7 +208,7 @@ func serverFormat(name, port, proto string) string {
 // ServiceGroupDelete deletes an existing service group
 func (c *Client) ServiceGroupDelete(name string) error {
 
-	format := `{ "service_group": { "name": "%s" } }`
+	format := `{ "name": "%s" }`
 
 	payload := fmt.Sprintf(format, name)
 
@@ -234,14 +234,16 @@ type A10VServer struct {
 
 // A10ServiceGroup is a service group
 type A10ServiceGroup struct {
-	Name    string
-	Members []A10SGMember
+	Name     string
+	Protocol string
+	Members  []A10SGMember
 }
 
 // A10SGMember is a service group member
 type A10SGMember struct {
-	Name string
-	Port string
+	Name     string
+	Port     string
+	Protocol string
 }
 
 // A10Server is a server
@@ -373,7 +375,8 @@ func a10ServiceGroupList(debugf FuncPrintf, host, sessionID string) []A10Service
 		}
 
 		name := mapGetStr(debugf, sgMap, "name")
-		group := A10ServiceGroup{Name: name}
+		protocol := mapGetValue(debugf, sgMap, "protocol")
+		group := A10ServiceGroup{Name: name, Protocol: protocol}
 
 		debugf("service group: %s", name)
 
@@ -472,6 +475,7 @@ func jsonExtractList(debugf FuncPrintf, body []byte, listName string) []interfac
 func a10SessionGet(debugf FuncPrintf, host, method, sessionID string) ([]byte, error) {
 	me := "a10SessionGet"
 	api := a10v21urlSession(host, method, sessionID)
+	debugf(me+": url=[%s]", api)
 	body, err := httpGet(api)
 	if err != nil {
 		debugf(me+": api=[%s] error: %v", api, err)
@@ -482,6 +486,7 @@ func a10SessionGet(debugf FuncPrintf, host, method, sessionID string) ([]byte, e
 func a10SessionPost(debugf FuncPrintf, host, method, sessionID, body string) ([]byte, error) {
 	me := "a10SessionPost"
 	api := a10v21urlSession(host, method, sessionID)
+	debugf(me+": url=[%s]", api)
 	respBody, err := httpPostString(api, contentTypeJSON, body)
 	if err != nil {
 		debugf(me+": api=[%s] error: %v", api, err)
