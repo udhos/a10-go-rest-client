@@ -272,7 +272,7 @@ func splitVirtualPort(debugf FuncPrintf, virtualPort string) (string, string, st
 	return s[0], s[1], s[2]
 }
 
-// VirtualServerDelete deletes an existing virutal server
+// VirtualServerDelete deletes an existing virtual server
 func (c *Client) VirtualServerDelete(name string) error {
 
 	format := `{ "name": "%s" }`
