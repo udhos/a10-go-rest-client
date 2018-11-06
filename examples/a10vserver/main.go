@@ -49,7 +49,7 @@ func main() {
 		return
 	}
 
-	fmt.Printf("#### before:\n")
+	fmt.Printf("\n#### before:\n\n")
 	litter.Dump(c.VirtualServerList())
 	litter.Dump(c.ServiceGroupList())
 	litter.Dump(c.ServerList())
@@ -60,15 +60,33 @@ func main() {
 		return
 	}
 
-	fmt.Printf("#### after:\n")
+	var virtualPorts []string
+	for _, g := range groupList {
+		virtualPorts = append(virtualPorts, g+",8888")
+	}
+
+	vServerName := "a10vserver_vs00"
+
+	errCreate := c.VirtualServerCreate(vServerName, "88.88.88.88", virtualPorts)
+	if errCreate != nil {
+		fmt.Printf("failure creating virtual server: %v\n", errCreate)
+		return
+	}
+
+	fmt.Printf("\n#### after:\n\n")
 	litter.Dump(c.VirtualServerList())
 	litter.Dump(c.ServiceGroupList())
 	litter.Dump(c.ServerList())
 
+	errDelete := c.VirtualServerDelete(vServerName)
+	if errDelete != nil {
+		fmt.Printf("failure deleting virtual server: %v\n", errDelete)
+	}
+
 	deleteGroups(c, groupList)
 	deleteServers(c, serverList)
 
-	fmt.Printf("#### final:\n")
+	fmt.Printf("\n#### final:\n\n")
 	litter.Dump(c.VirtualServerList())
 	litter.Dump(c.ServiceGroupList())
 	litter.Dump(c.ServerList())

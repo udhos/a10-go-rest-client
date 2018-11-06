@@ -222,6 +222,70 @@ func (c *Client) ServiceGroupDelete(name string) error {
 	return errDelete
 }
 
+// VirtualServerCreate creates new virtual server
+func (c *Client) VirtualServerCreate(name, address string, virtualPorts []string) error {
+
+	format := `{
+            "virtual_server": {
+                "name": "%s",
+                "address": "%s",
+                "status": 1,
+		"vport_list": [%s]
+            }
+	}
+`
+
+	portList := ""
+	for _, p := range virtualPorts {
+		serviceGroup, port, proto := splitVirtualPort(c.debugf, p)
+		portFmt := virtualPortFormat(serviceGroup, port, proto)
+		if portList == "" {
+			portList = portFmt
+			continue
+		}
+		portList += "," + portFmt
+	}
+
+	payload := fmt.Sprintf(format, name, address, portList)
+
+	body, errPost := c.Post("slb.virtual_server.create", payload)
+
+	c.debugf("VirtualServerCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
+
+	return errPost
+}
+
+func virtualPortFormat(serviceGroup, port, protocol string) string {
+	return fmt.Sprintf(`{"port": %s, "service_group": "%s", "protocol": "%s"}`, port, serviceGroup, protocol)
+}
+
+func splitVirtualPort(debugf FuncPrintf, virtualPort string) (string, string, string) {
+	s := strings.FieldsFunc(virtualPort, isSep)
+	proto := defaultProtoTCP
+	count := len(s)
+	if count < 2 {
+		return "", "", proto
+	}
+	if count < 3 {
+		return s[0], s[1], proto
+	}
+	return s[0], s[1], s[2]
+}
+
+// VirtualServerDelete deletes an existing virutal server
+func (c *Client) VirtualServerDelete(name string) error {
+
+	format := `{ "name": "%s" }`
+
+	payload := fmt.Sprintf(format, name)
+
+	body, errDelete := c.Post("slb.virtual_server.delete", payload)
+
+	c.debugf("VirtualServerDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+
+	return errDelete
+}
+
 // VirtualServerList retrieves the full virtual server list
 func (c *Client) VirtualServerList() []A10VServer {
 	return a10VirtualServerList(c.debugf, c.host, c.sessionID)
