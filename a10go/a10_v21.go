@@ -110,11 +110,11 @@ func splitPortProto(debugf FuncPrintf, portProto string) (string, string) {
 	count := len(s)
 	switch {
 	case count < 1:
-		proto := "2"
+		proto := defaultProtoTCP
 		debugf("splitPortProto(%s): defaulting to port protocol=%s", portProto, proto)
 		return "", proto
 	case count < 2:
-		proto := "2"
+		proto := defaultProtoTCP
 		debugf("splitPortProto(%s): defaulting to port protocol=%s", portProto, proto)
 		return s[0], proto
 	}
@@ -156,18 +156,18 @@ func (c *Client) ServiceGroupCreate(name, protocol string, members []string) err
         }
 `
 
-	serverList := ""
+	memberList := ""
 	for _, s := range members {
-		serverName, serverPort, serverProto := splitServerPortProto(c.debugf, s)
-		serverFmt := serverFormat(serverName, serverPort, serverProto)
-		if serverList == "" {
-			serverList = serverFmt
+		memberName, memberPort, memberProto := splitMemberPortProto(c.debugf, s)
+		memberFmt := memberFormat(memberName, memberPort, memberProto)
+		if memberList == "" {
+			memberList = memberFmt
 			continue
 		}
-		serverList += "," + serverFmt
+		memberList += "," + memberFmt
 	}
 
-	payload := fmt.Sprintf(format, name, protocol, serverList)
+	payload := fmt.Sprintf(format, name, protocol, memberList)
 
 	body, errPost := c.Post("slb.service_group.create", payload)
 
@@ -176,22 +176,23 @@ func (c *Client) ServiceGroupCreate(name, protocol string, members []string) err
 	return errPost
 }
 
-func splitServerPortProto(debugf FuncPrintf, serverPort string) (string, string, string) {
-	s := strings.FieldsFunc(serverPort, isSep)
+const defaultProtoTCP = "2"
+
+// FIXME member proto is not actually used for anything
+func splitMemberPortProto(debugf FuncPrintf, memberPort string) (string, string, string) {
+	s := strings.FieldsFunc(memberPort, isSep)
 	count := len(s)
+	proto := defaultProtoTCP
 	if count < 1 {
-		proto := "2"
-		debugf("splitServerPortProto(%s): count=%d defaulting to port protocol=%s", serverPort, count, proto)
+		//debugf("splitMemberPortProto(%s): count=%d defaulting to port protocol=%s", memberPort, count, proto)
 		return "", "", proto
 	}
 	if count < 2 {
-		proto := "2"
-		debugf("splitServerPortProto(%s): count=%d defaulting to port protocol=%s", serverPort, count, proto)
+		//debugf("splitMemberPortProto(%s): count=%d defaulting to port protocol=%s", memberPort, count, proto)
 		return s[0], "", proto
 	}
 	if count < 3 {
-		proto := "2"
-		debugf("splitServerPortProto(%s): count=%d defaulting to port protocol=%s", serverPort, count, proto)
+		//debugf("splitMemberPortProto(%s): count=%d defaulting to port protocol=%s", memberPort, count, proto)
 		return s[0], s[1], proto
 	}
 	return s[0], s[1], s[2]
@@ -201,8 +202,10 @@ func isSep(c rune) bool {
 	return c == ',' || unicode.IsSpace(c)
 }
 
-func serverFormat(name, port, proto string) string {
-	return fmt.Sprintf(`{"server": "%s", "port": %s, "protocol": %s}`, name, port, proto)
+// FIXME member proto is not actually used for anything
+func memberFormat(name, port, proto string) string {
+	//return fmt.Sprintf(`{"server": "%s", "port": %s, "protocol": %s}`, name, port, proto)
+	return fmt.Sprintf(`{"server": "%s", "port": %s}`, name, port)
 }
 
 // ServiceGroupDelete deletes an existing service group
@@ -241,9 +244,8 @@ type A10ServiceGroup struct {
 
 // A10SGMember is a service group member
 type A10SGMember struct {
-	Name     string
-	Port     string
-	Protocol string
+	Name string
+	Port string
 }
 
 // A10Server is a server
