@@ -22,6 +22,7 @@ type FuncPrintf func(format string, v ...interface{})
 type Options struct {
 	Debug       bool       // enable debugging
 	DebugPrintf FuncPrintf // custom Printf function for debugging
+	Dry         bool       // do not change anything
 }
 
 func (c *Client) debugf(format string, v ...interface{}) {
@@ -57,7 +58,7 @@ func (c *Client) Get(method string) ([]byte, error) {
 
 // Post calls http POST for an specific api method
 func (c *Client) Post(method, body string) ([]byte, error) {
-	return a10SessionPost(c.debugf, c.host, method, c.sessionID, body)
+	return a10SessionPost(c.opt.Dry, c.debugf, c.host, method, c.sessionID, body)
 }
 
 /*
@@ -567,13 +568,17 @@ func a10SessionGet(debugf FuncPrintf, host, method, sessionID string) ([]byte, e
 	return body, err
 }
 
-func a10SessionPost(debugf FuncPrintf, host, method, sessionID, body string) ([]byte, error) {
+func a10SessionPost(dry bool, debugf FuncPrintf, host, method, sessionID, body string) ([]byte, error) {
 	me := "a10SessionPost"
 	api := a10v21urlSession(host, method, sessionID)
-	debugf(me+": url=[%s]", api)
-	respBody, err := httpPostString(api, contentTypeJSON, body)
+	debugf(me+": dry=%v url=[%s]", dry, api)
+	var respBody []byte
+	var err error
+	if !dry {
+		respBody, err = httpPostString(api, contentTypeJSON, body)
+	}
 	if err != nil {
-		debugf(me+": api=[%s] error: %v", api, err)
+		debugf(me+": dry=%v api=[%s] error: %v", dry, api, err)
 	}
 	return respBody, err
 }
