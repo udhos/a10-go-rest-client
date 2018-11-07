@@ -156,6 +156,15 @@ func (c *Client) ServiceGroupList() []A10ServiceGroup {
 
 // ServiceGroupCreate creates new service group
 func (c *Client) ServiceGroupCreate(name, protocol string, members []string) error {
+	return serviceGroupPost(c, "slb.service_group.create", name, protocol, members)
+}
+
+// ServiceGroupUpdate updates service group
+func (c *Client) ServiceGroupUpdate(name, protocol string, members []string) error {
+	return serviceGroupPost(c, "slb.service_group.update", name, protocol, members)
+}
+
+func serviceGroupPost(c *Client, method, name, protocol string, members []string) error {
 
 	format := `{
             "service_group": {
@@ -179,9 +188,9 @@ func (c *Client) ServiceGroupCreate(name, protocol string, members []string) err
 
 	payload := fmt.Sprintf(format, name, protocol, memberList)
 
-	body, errPost := c.Post("slb.service_group.create", payload)
+	body, errPost := c.Post(method, payload)
 
-	c.debugf("ServiceGroupCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
+	c.debugf("serviceGroupPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
 
 	return errPost
 }
