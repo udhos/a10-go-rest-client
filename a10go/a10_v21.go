@@ -243,6 +243,15 @@ func (c *Client) ServiceGroupDelete(name string) error {
 
 // VirtualServerCreate creates new virtual server
 func (c *Client) VirtualServerCreate(name, address string, virtualPorts []string) error {
+	return virtualServerPost(c, "slb.virtual_server.create", name, address, virtualPorts)
+}
+
+// VirtualServerUpdate updates virtual server
+func (c *Client) VirtualServerUpdate(name, address string, virtualPorts []string) error {
+	return virtualServerPost(c, "slb.virtual_server.update", name, address, virtualPorts)
+}
+
+func virtualServerPost(c *Client, method, name, address string, virtualPorts []string) error {
 
 	format := `{
             "virtual_server": {
@@ -267,9 +276,9 @@ func (c *Client) VirtualServerCreate(name, address string, virtualPorts []string
 
 	payload := fmt.Sprintf(format, name, address, portList)
 
-	body, errPost := c.Post("slb.virtual_server.create", payload)
+	body, errPost := c.Post(method, payload)
 
-	c.debugf("VirtualServerCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
+	c.debugf("virtualServerPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
 
 	return errPost
 }
