@@ -244,11 +244,13 @@ func (c *Client) ServiceGroupDelete(name string) error {
 }
 
 // VirtualServerCreate creates new virtual server
+// virtualPorts is list of "serviceGroup,port,protocol"
 func (c *Client) VirtualServerCreate(name, address string, virtualPorts []string) error {
 	return virtualServerPost(c, "slb.virtual_server.create", name, address, virtualPorts)
 }
 
 // VirtualServerUpdate updates virtual server
+// virtualPorts is list of "serviceGroup,port,protocol"
 func (c *Client) VirtualServerUpdate(name, address string, virtualPorts []string) error {
 	return virtualServerPost(c, "slb.virtual_server.update", name, address, virtualPorts)
 }
