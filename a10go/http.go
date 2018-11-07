@@ -64,8 +64,12 @@ func httpDelete(url string, contentType string, body io.Reader) ([]byte, error) 
 }
 
 func clientDelete(c *http.Client, url, bodyContentType string, body io.Reader) ([]byte, error) {
+	return clientMethod(c, "DELETE", url, bodyContentType, body)
+}
 
-	req, errNew := http.NewRequest("DELETE", url, body)
+func clientMethod(c *http.Client, method, url, bodyContentType string, body io.Reader) ([]byte, error) {
+
+	req, errNew := http.NewRequest(method, url, body)
 	if errNew != nil {
 		return nil, errNew
 	}
@@ -78,16 +82,16 @@ func clientDelete(c *http.Client, url, bodyContentType string, body io.Reader) (
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("httpDelete: bad status: %d", resp.StatusCode)
-	}
-
 	info, errRead := ioutil.ReadAll(resp.Body)
 	if errRead != nil {
-		return nil, fmt.Errorf("httpDelete: read all: url=%v: %v", url, errRead)
+		return info, fmt.Errorf("http method=%s: read all: url=%v: %v", method, url, errRead)
 	}
 
-	return info, errRead
+	if resp.StatusCode != 200 {
+		return info, fmt.Errorf("http method=%s: bad status: %d", method, resp.StatusCode)
+	}
+
+	return info, nil
 }
 
 func clientPost(c *http.Client, url string, contentType string, r io.Reader) ([]byte, error) {
@@ -99,16 +103,16 @@ func clientPost(c *http.Client, url string, contentType string, r io.Reader) ([]
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("httpPost: bad status: %d", resp.StatusCode)
-	}
-
-	body, errBody := ioutil.ReadAll(resp.Body)
+	info, errBody := ioutil.ReadAll(resp.Body)
 	if errBody != nil {
-		return nil, fmt.Errorf("httpPost: read: url=%v: %v", url, errBody)
+		return info, fmt.Errorf("httpPost: read: url=%v: %v", url, errBody)
 	}
 
-	return body, errBody
+	if resp.StatusCode != 200 {
+		return info, fmt.Errorf("httpPost: bad status: %d", resp.StatusCode)
+	}
+
+	return info, nil
 }
 
 func clientGet(c *http.Client, url string) ([]byte, error) {
@@ -119,14 +123,14 @@ func clientGet(c *http.Client, url string) ([]byte, error) {
 
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("httpGet: bad status: %d", resp.StatusCode)
-	}
-
 	info, errRead := ioutil.ReadAll(resp.Body)
 	if errRead != nil {
-		return nil, fmt.Errorf("httpGet: read all: url=%v: %v", url, errRead)
+		return info, fmt.Errorf("httpGet: read all: url=%v: %v", url, errRead)
 	}
 
-	return info, errRead
+	if resp.StatusCode != 200 {
+		return info, fmt.Errorf("httpGet: bad status: %d", resp.StatusCode)
+	}
+
+	return info, nil
 }
