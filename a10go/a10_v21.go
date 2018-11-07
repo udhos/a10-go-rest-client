@@ -155,11 +155,13 @@ func (c *Client) ServiceGroupList() []A10ServiceGroup {
 }
 
 // ServiceGroupCreate creates new service group
+// members is list of "serverName,portNumber,portProtocol"
 func (c *Client) ServiceGroupCreate(name, protocol string, members []string) error {
 	return serviceGroupPost(c, "slb.service_group.create", name, protocol, members)
 }
 
 // ServiceGroupUpdate updates service group
+// members is list of "serverName,portNumber,portProtocol"
 func (c *Client) ServiceGroupUpdate(name, protocol string, members []string) error {
 	return serviceGroupPost(c, "slb.service_group.update", name, protocol, members)
 }
