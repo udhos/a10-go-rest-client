@@ -74,6 +74,15 @@ func (c *Client) ServerList() []A10Server {
 
 // ServerCreate creates new server
 func (c *Client) ServerCreate(name, host string, ports []string) error {
+	return serverPost(c, "slb.server.create", name, host, ports)
+}
+
+// ServerUpdate updates server
+func (c *Client) ServerUpdate(name, host string, ports []string) error {
+	return serverPost(c, "slb.server.update", name, host, ports)
+}
+
+func serverPost(c *Client, method, name, host string, ports []string) error {
 
 	format := `{
             "server": {
@@ -98,9 +107,9 @@ func (c *Client) ServerCreate(name, host string, ports []string) error {
 
 	payload := fmt.Sprintf(format, name, host, portList)
 
-	body, errPost := c.Post("slb.server.create", payload)
+	body, errPost := c.Post(method, payload)
 
-	c.debugf("ServerCreate: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errPost)
+	c.debugf("serverPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
 
 	return errPost
 }
