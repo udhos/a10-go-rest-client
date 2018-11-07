@@ -291,35 +291,41 @@ func (c *Client) VirtualServerList() []A10VServer {
 	return a10VirtualServerList(c.debugf, c.host, c.sessionID)
 }
 
-// A10VServer is a virtual server
+// A10VServer is a virtual server for VirtualServerList()
 type A10VServer struct {
-	Name          string
-	Address       string
-	Port          string
-	ServiceGroups []string
+	Name         string
+	Address      string
+	VirtualPorts []A10VirtualPort
 }
 
-// A10ServiceGroup is a service group
+// A10VirtualPort is a virtual port for A10VServer
+type A10VirtualPort struct {
+	Port         string
+	Protocol     string
+	ServiceGroup string
+}
+
+// A10ServiceGroup is a service group for ServiceGroupList()
 type A10ServiceGroup struct {
 	Name     string
 	Protocol string
 	Members  []A10SGMember
 }
 
-// A10SGMember is a service group member
+// A10SGMember is a service group member for A10ServiceGroup
 type A10SGMember struct {
 	Name string
 	Port string
 }
 
-// A10Server is a server
+// A10Server is a server for ServerList()
 type A10Server struct {
 	Name  string
 	Host  string
 	Ports []A10Port
 }
 
-// A10Port defines port/protocol
+// A10Port defines port/protocol for A10Server
 type A10Port struct {
 	Number   string
 	Protocol string
@@ -444,7 +450,7 @@ func a10ServiceGroupList(debugf FuncPrintf, host, sessionID string) []A10Service
 		protocol := mapGetValue(debugf, sgMap, "protocol")
 		group := A10ServiceGroup{Name: name, Protocol: protocol}
 
-		debugf("service group: %s", name)
+		debugf("service group: %s protocol=[%s]", name, protocol)
 
 		memberList := sgMap["member_list"]
 		mList, isList := memberList.([]interface{})
@@ -503,12 +509,15 @@ func a10VirtualServerList(debugf FuncPrintf, host, sessionID string) []A10VServe
 			if !isPMap {
 				continue
 			}
-			pStr := mapGetValue(debugf, pMap, "port")
 			sGroup := mapGetStr(debugf, pMap, "service_group")
+			pStr := mapGetValue(debugf, pMap, "port")
+			pProto := mapGetValue(debugf, pMap, "protocol")
 
-			vServer.Port = pStr
-			vServer.ServiceGroups = append(vServer.ServiceGroups, sGroup)
-			debugf("virtual server: %s service_group=%s", name, sGroup)
+			vPort := A10VirtualPort{ServiceGroup: sGroup, Port: pStr, Protocol: pProto}
+
+			vServer.VirtualPorts = append(vServer.VirtualPorts, vPort)
+
+			debugf("virtual port: server=%s port=%s service_group=%s", name, pStr, sGroup)
 		}
 
 		list = append(list, vServer)
