@@ -67,21 +67,16 @@ func main() {
 
 	vServerName := "a10vserver_vs00"
 
-	errCreate := c.VirtualServerCreate(vServerName, "88.88.88.88", virtualPorts)
-	if errCreate != nil {
-		fmt.Printf("failure creating virtual server: %v\n", errCreate)
-		return
-	}
+	createVS(c, vServerName, virtualPorts)
+	createVS(c, vServerName, virtualPorts)
 
 	fmt.Printf("\n#### after:\n\n")
 	litter.Dump(c.VirtualServerList())
 	litter.Dump(c.ServiceGroupList())
 	litter.Dump(c.ServerList())
 
-	errDelete := c.VirtualServerDelete(vServerName)
-	if errDelete != nil {
-		fmt.Printf("failure deleting virtual server: %v\n", errDelete)
-	}
+	deleteVS(c, vServerName)
+	deleteVS(c, vServerName)
 
 	deleteGroups(c, groupList)
 	deleteServers(c, serverList)
@@ -95,6 +90,16 @@ func main() {
 	if errLogout != nil {
 		fmt.Printf("logout failure: %v\n", errLogout)
 	}
+}
+
+func createVS(c *a10go.Client, name string, ports []string) {
+	errCreate := c.VirtualServerCreate(name, "88.88.88.88", ports)
+	fmt.Printf("creating virtuaServer=%s: %v\n", name, errCreate)
+}
+
+func deleteVS(c *a10go.Client, name string) {
+	errDelete := c.VirtualServerDelete(name)
+	fmt.Printf("deleting virtualServer=%s: %v\n", name, errDelete)
 }
 
 func createGroups(c *a10go.Client, groupCount int, serverCount int) ([]string, []string, []string) {

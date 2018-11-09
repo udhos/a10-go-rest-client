@@ -318,6 +318,8 @@ func (c *Client) VirtualServerUpdate(name, address string, virtualPorts []string
 
 func virtualServerPost(c *Client, method, name, address string, virtualPorts []string) error {
 
+	me := "virtualServerPost"
+
 	format := `{
             "virtual_server": {
                 "name": "%s",
@@ -345,7 +347,15 @@ func virtualServerPost(c *Client, method, name, address string, virtualPorts []s
 
 	c.debugf("virtualServerPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
 
-	return errPost
+	if errPost != nil {
+		return fmt.Errorf(me+": error: %v", errPost)
+	}
+
+	if badJSONResponse(c.debugf, body) {
+		return fmt.Errorf(me+": bad response: %s", string(body))
+	}
+
+	return nil
 }
 
 func virtualPortFormat(serviceGroup, port, protocol string) string {
@@ -368,15 +378,25 @@ func splitVirtualPort(debugf FuncPrintf, virtualPort string) (string, string, st
 // VirtualServerDelete deletes an existing virtual server
 func (c *Client) VirtualServerDelete(name string) error {
 
+	me := "VirtualServerDelete"
+
 	format := `{ "name": "%s" }`
 
 	payload := fmt.Sprintf(format, name)
 
 	body, errDelete := c.Post("slb.virtual_server.delete", payload)
 
-	c.debugf("VirtualServerDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+	c.debugf(me+": reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
 
-	return errDelete
+	if errDelete != nil {
+		return fmt.Errorf(me+": error: %v", errDelete)
+	}
+
+	if badJSONResponse(c.debugf, body) {
+		return fmt.Errorf(me+": bad response: %s", string(body))
+	}
+
+	return nil
 }
 
 // VirtualServerList retrieves the full virtual server list
