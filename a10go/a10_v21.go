@@ -117,7 +117,7 @@ func serverPost(c *Client, method, name, host string, ports []string) error {
 	}
 
 	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf("serverPost: method=%s bad response: %s", method, string(body))
+		return fmt.Errorf("serverPost: method=%s bad response: [%s]", method, string(body))
 	}
 
 	return nil
