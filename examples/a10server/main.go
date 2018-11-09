@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sanity-io/litter"
 	"github.com/udhos/a10-go-rest-client/a10go"
@@ -21,8 +22,20 @@ func main() {
 	pass := os.Args[3]
 
 	debug := os.Getenv("DEBUG") != ""
-
 	fmt.Printf("%s: debug=%v DEBUG=[%s]\n", me, debug, os.Getenv("DEBUG"))
+
+	serverName := os.Getenv("SERVER_NAME")
+	if serverName == "" {
+		serverName = "a10server_test00"
+	}
+	fmt.Printf("%s: serverName=%s SERVER_NAME=[%s]\n", me, serverName, os.Getenv("SERVER_NAME"))
+
+	portList := os.Getenv("PORTS")
+	if portList == "" {
+		portList = "8888 9999"
+	}
+	ports := strings.Fields(portList)
+	fmt.Printf("%s: ports=%v PORTS=[%s]\n", me, ports, os.Getenv("PORTS"))
 
 	c := a10go.New(host, a10go.Options{Debug: debug})
 
@@ -34,10 +47,6 @@ func main() {
 
 	fmt.Printf("\nbefore servers:\n")
 	litter.Dump(c.ServerList())
-
-	serverName := "a10server_test00"
-
-	ports := []string{"8888", "9999"}
 
 	create(c, serverName, ports)
 	create(c, serverName, ports)

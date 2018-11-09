@@ -110,7 +110,7 @@ func serverPost(c *Client, method, name, host string, ports []string) error {
 
 	body, errPost := c.Post(method, payload)
 
-	c.debugf("serverPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
+	c.debugf("serverPost: method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
 
 	if errPost != nil {
 		return fmt.Errorf("serverPost: method=%s error: %v", method, errPost)
