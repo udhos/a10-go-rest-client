@@ -247,7 +247,15 @@ func serviceGroupPost(c *Client, method, name, protocol string, members []string
 
 	c.debugf("serviceGroupPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
 
-	return errPost
+	if errPost != nil {
+		return fmt.Errorf("serviceGroupPost: method=%s error: %v", method, errPost)
+	}
+
+	if badJSONResponse(c.debugf, body) {
+		return fmt.Errorf("serviceGroupPost: method=%s bad response: %s", method, string(body))
+	}
+
+	return nil
 }
 
 const defaultProtoTCP = "2"
@@ -285,15 +293,25 @@ func memberFormat(name, port, proto string) string {
 // ServiceGroupDelete deletes an existing service group
 func (c *Client) ServiceGroupDelete(name string) error {
 
+	me := "ServiceGroupDelete"
+
 	format := `{ "name": "%s" }`
 
 	payload := fmt.Sprintf(format, name)
 
 	body, errDelete := c.Post("slb.service_group.delete", payload)
 
-	c.debugf("ServiceGroupDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+	c.debugf(me+": reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
 
-	return errDelete
+	if errDelete != nil {
+		return fmt.Errorf(me+": error: %v", errDelete)
+	}
+
+	if badJSONResponse(c.debugf, body) {
+		return fmt.Errorf(me+": bad response: %s", string(body))
+	}
+
+	return nil
 }
 
 // VirtualServerCreate creates new virtual server

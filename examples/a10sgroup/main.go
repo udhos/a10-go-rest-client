@@ -44,9 +44,6 @@ func main() {
 		a := fmt.Sprintf("99.99.99.%d", i)
 		errCreate := c.ServerCreate(s, a, []string{"8888", "9999"})
 		fmt.Printf("creating %d/%d server=[%s] error:%v\n", i, serverCount, s, errCreate)
-		if errCreate != nil {
-			return
-		}
 		serverList = append(serverList, s)
 	}
 
@@ -56,25 +53,31 @@ func main() {
 	}
 
 	fmt.Printf("before service groups:\n")
-	sgroups := c.ServiceGroupList()
-	litter.Dump(sgroups)
+	litter.Dump(c.ServiceGroupList())
 
 	sgName := "a10sg_test00"
 
-	proto := "2" // proto=TCP
-	errCreate := c.ServiceGroupCreate(sgName, proto, serverPortList)
-	fmt.Printf("creating service group: error:%v\n", errCreate)
+	create(c, sgName, serverPortList)
+	create(c, sgName, serverPortList)
 
-	fmt.Printf("after service groups:\n")
-	sgroups = c.ServiceGroupList()
-	litter.Dump(sgroups)
+	fmt.Printf("after creating service groups:\n")
+	litter.Dump(c.ServiceGroupList())
 
-	errDel := c.ServiceGroupDelete(sgName)
-	fmt.Printf("deleting server: error:%v\n", errDel)
+	update(c, sgName, serverPortList)
+
+	fmt.Printf("after updating service groups - keeping members:\n")
+	litter.Dump(c.ServiceGroupList())
+
+	update(c, sgName, []string{})
+
+	fmt.Printf("after updating service groups - removing members:\n")
+	litter.Dump(c.ServiceGroupList())
+
+	destroy(c, sgName)
+	destroy(c, sgName)
 
 	fmt.Printf("final service groups:\n")
-	sgroups = c.ServiceGroupList()
-	litter.Dump(sgroups)
+	litter.Dump(c.ServiceGroupList())
 
 	for i, s := range serverList {
 		errDelete := c.ServerDelete(s)
@@ -85,4 +88,21 @@ func main() {
 	if errLogout != nil {
 		fmt.Printf("logout failure: %v\n", errLogout)
 	}
+}
+
+func update(c *a10go.Client, sgName string, serverPortList []string) {
+	proto := "2" // proto=TCP
+	errUpdate := c.ServiceGroupUpdate(sgName, proto, serverPortList)
+	fmt.Printf("updating service group=%s servers=%v error:%v\n", sgName, serverPortList, errUpdate)
+}
+
+func create(c *a10go.Client, sgName string, serverPortList []string) {
+	proto := "2" // proto=TCP
+	errCreate := c.ServiceGroupCreate(sgName, proto, serverPortList)
+	fmt.Printf("creating service group=%s servers=%v error:%v\n", sgName, serverPortList, errCreate)
+}
+
+func destroy(c *a10go.Client, sgName string) {
+	errDel := c.ServiceGroupDelete(sgName)
+	fmt.Printf("deleting service group=%s error:%v\n", sgName, errDel)
 }
