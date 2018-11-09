@@ -32,25 +32,42 @@ func main() {
 		return
 	}
 
-	fmt.Printf("before servers:\n")
-	servers := c.ServerList()
-	litter.Dump(servers)
+	fmt.Printf("\nbefore servers:\n")
+	litter.Dump(c.ServerList())
 
 	serverName := "a10server_test00"
 
-	create(c, serverName)
-	create(c, serverName)
+	ports := []string{"8888", "9999"}
 
-	fmt.Printf("after servers:\n")
-	servers = c.ServerList()
-	litter.Dump(servers)
+	create(c, serverName, ports)
+	create(c, serverName, ports)
+
+	fmt.Printf("\nafter servers:\n")
+	litter.Dump(c.ServerList())
+
+	update(c, "intentional-non-existant-server-name", ports)
+
+	p7 := []string{"7777"}
+	update(c, serverName, p7) // will add the port to list
+
+	fmt.Printf("\nafter updating ports=%v:\n", p7)
+	litter.Dump(c.ServerList())
+
+	update(c, serverName, nil) // will clear port list
+
+	fmt.Printf("\nafter updating ports=nil:\n")
+	litter.Dump(c.ServerList())
+
+	update(c, serverName, p7)
+
+	fmt.Printf("\nafter updating ports=%v:\n", p7)
+	litter.Dump(c.ServerList())
 
 	destroy(c, serverName)
 	destroy(c, serverName)
 
-	fmt.Printf("final servers:\n")
-	servers = c.ServerList()
-	litter.Dump(servers)
+	fmt.Printf("\nfinal servers:\n")
+	litter.Dump(c.ServerList())
 
 	errLogout := c.Logout()
 	if errLogout != nil {
@@ -58,9 +75,14 @@ func main() {
 	}
 }
 
-func create(c *a10go.Client, serverName string) {
-	errCreate := c.ServerCreate(serverName, "99.99.99.99", []string{"8888", "9999"})
-	fmt.Printf("creating server=%s error:%v\n", serverName, errCreate)
+func create(c *a10go.Client, serverName string, ports []string) {
+	errCreate := c.ServerCreate(serverName, "99.99.99.99", ports)
+	fmt.Printf("creating server=%s ports=%v error:%v\n", serverName, ports, errCreate)
+}
+
+func update(c *a10go.Client, serverName string, ports []string) {
+	errUpdate := c.ServerUpdate(serverName, "99.99.99.99", ports)
+	fmt.Printf("updating server=%s ports=%v error:%v\n", serverName, ports, errUpdate)
 }
 
 func destroy(c *a10go.Client, serverName string) {
