@@ -208,13 +208,13 @@ func (c *Client) ServiceGroupList() []A10ServiceGroup {
 }
 
 // ServiceGroupCreate creates new service group
-// members is list of "serverName,portNumber,portProtocol"
+// members is list of "serverName,portNumber"
 func (c *Client) ServiceGroupCreate(name, protocol string, members []string) error {
 	return serviceGroupPost(c, "slb.service_group.create", name, protocol, members)
 }
 
 // ServiceGroupUpdate updates service group
-// members is list of "serverName,portNumber,portProtocol"
+// members is list of "serverName,portNumber"
 func (c *Client) ServiceGroupUpdate(name, protocol string, members []string) error {
 	return serviceGroupPost(c, "slb.service_group.update", name, protocol, members)
 }
@@ -232,8 +232,8 @@ func serviceGroupPost(c *Client, method, name, protocol string, members []string
 
 	memberList := ""
 	for _, s := range members {
-		memberName, memberPort, memberProto := splitMemberPortProto(c.debugf, s)
-		memberFmt := memberFormat(memberName, memberPort, memberProto)
+		memberName, memberPort := splitMemberPortProto(c.debugf, s)
+		memberFmt := memberFormat(memberName, memberPort)
 		if memberList == "" {
 			memberList = memberFmt
 			continue
@@ -260,33 +260,23 @@ func serviceGroupPost(c *Client, method, name, protocol string, members []string
 
 const defaultProtoTCP = "2"
 
-// FIXME member proto is not actually used for anything
-func splitMemberPortProto(debugf FuncPrintf, memberPort string) (string, string, string) {
+func splitMemberPortProto(debugf FuncPrintf, memberPort string) (string, string) {
 	s := strings.FieldsFunc(memberPort, isSep)
 	count := len(s)
-	proto := defaultProtoTCP
 	if count < 1 {
-		//debugf("splitMemberPortProto(%s): count=%d defaulting to port protocol=%s", memberPort, count, proto)
-		return "", "", proto
+		return "", ""
 	}
 	if count < 2 {
-		//debugf("splitMemberPortProto(%s): count=%d defaulting to port protocol=%s", memberPort, count, proto)
-		return s[0], "", proto
+		return s[0], ""
 	}
-	if count < 3 {
-		//debugf("splitMemberPortProto(%s): count=%d defaulting to port protocol=%s", memberPort, count, proto)
-		return s[0], s[1], proto
-	}
-	return s[0], s[1], s[2]
+	return s[0], s[1]
 }
 
 func isSep(c rune) bool {
 	return c == ',' || unicode.IsSpace(c)
 }
 
-// FIXME member proto is not actually used for anything
-func memberFormat(name, port, proto string) string {
-	//return fmt.Sprintf(`{"server": "%s", "port": %s, "protocol": %s}`, name, port, proto)
+func memberFormat(name, port string) string {
 	return fmt.Sprintf(`{"server": "%s", "port": %s}`, name, port)
 }
 
