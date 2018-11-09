@@ -36,15 +36,17 @@ func main() {
 	servers := c.ServerList()
 	litter.Dump(servers)
 
-	errCreate := c.ServerCreate("a10server_test00", "99.99.99.99", []string{"8888", "9999"})
-	fmt.Printf("creating server: error:%v\n", errCreate)
+	serverName := "a10server_test00"
+
+	create(c, serverName)
+	create(c, serverName)
 
 	fmt.Printf("after servers:\n")
 	servers = c.ServerList()
 	litter.Dump(servers)
 
-	errDel := c.ServerDelete("a10server_test00")
-	fmt.Printf("deleting server: error:%v\n", errDel)
+	destroy(c, serverName)
+	destroy(c, serverName)
 
 	fmt.Printf("final servers:\n")
 	servers = c.ServerList()
@@ -54,4 +56,14 @@ func main() {
 	if errLogout != nil {
 		fmt.Printf("logout failure: %v", errLogout)
 	}
+}
+
+func create(c *a10go.Client, serverName string) {
+	errCreate := c.ServerCreate(serverName, "99.99.99.99", []string{"8888", "9999"})
+	fmt.Printf("creating server=%s error:%v\n", serverName, errCreate)
+}
+
+func destroy(c *a10go.Client, serverName string) {
+	errDel := c.ServerDelete(serverName)
+	fmt.Printf("deleting server=%s error:%v\n", serverName, errDel)
 }

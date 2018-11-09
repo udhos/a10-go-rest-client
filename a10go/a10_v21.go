@@ -112,7 +112,15 @@ func serverPost(c *Client, method, name, host string, ports []string) error {
 
 	c.debugf("serverPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
 
-	return errPost
+	if errPost != nil {
+		return fmt.Errorf("serverPost: method=%s error: %v", method, errPost)
+	}
+
+	if badJSONResponse(c.debugf, body) {
+		return fmt.Errorf("serverPost: method=%s bad response: %s", method, string(body))
+	}
+
+	return nil
 }
 
 func splitPortProto(debugf FuncPrintf, portProto string) (string, string) {
@@ -138,6 +146,8 @@ func portFormat(port, protocol string) string {
 // ServerDelete deletes an existing server
 func (c *Client) ServerDelete(name string) error {
 
+	me := "ServerDelete"
+
 	format := `{ "server": { "name": "%s" } }`
 
 	payload := fmt.Sprintf(format, name)
@@ -146,7 +156,50 @@ func (c *Client) ServerDelete(name string) error {
 
 	c.debugf("ServerDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
 
-	return errDelete
+	if errDelete != nil {
+		return fmt.Errorf(me+": error: %v", errDelete)
+	}
+
+	if badJSONResponse(c.debugf, body) {
+		return fmt.Errorf(me+": bad response: %s", string(body))
+	}
+
+	return nil
+}
+
+// {"response": {"status": "OK"}}
+// {"response": {"status": "fail", "err": {"code": 67174402, "msg": " No such Server"}}}
+func badJSONResponse(debugf FuncPrintf, buf []byte) bool {
+
+	me := "badJSONResponse"
+
+	tab := map[string]interface{}{}
+
+	errJSON := json.Unmarshal(buf, &tab)
+	if errJSON != nil {
+		debugf(me+": json error: %v", errJSON)
+		return true // bad response
+	}
+
+	resp, hasResponse := tab["response"]
+	if !hasResponse {
+		debugf(me + ": missing response")
+		return true // bad response
+	}
+
+	response, isMap := resp.(map[string]interface{})
+	if !isMap {
+		debugf(me + ": response is not a map")
+		return true // bad response
+	}
+
+	status := mapGetStr(debugf, response, "status")
+	if status != "OK" {
+		debugf(me+": status is not OK: status=[%s]", status)
+		return true
+	}
+
+	return false // good response
 }
 
 // ServiceGroupList retrieves the full server group list
