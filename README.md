@@ -32,4 +32,10 @@ A10 golang rest client
 
 See GoDoc: [http://godoc.org/github.com/udhos/a10-go-rest-client/a10go](http://godoc.org/github.com/udhos/a10-go-rest-client/a10go)
 
-See example: [a10list](https://github.com/udhos/a10-go-rest-client/blob/master/examples/a10list/main.go)
+See [examples](https://github.com/udhos/a10-go-rest-client/tree/master/examples):
+
+- [a10list](https://github.com/udhos/a10-go-rest-client/blob/master/examples/a10list/main.go)
+- [a10server](https://github.com/udhos/a10-go-rest-client/blob/master/examples/a10server/main.go)
+- [a10sgroup](https://github.com/udhos/a10-go-rest-client/blob/master/examples/a10sgroup/main.go)
+- [a10vserver](https://github.com/udhos/a10-go-rest-client/blob/master/examples/a10vserver/main.go)
+
