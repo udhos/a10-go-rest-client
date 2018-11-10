@@ -677,7 +677,11 @@ func a10SessionPost(dry bool, debugf FuncPrintf, host, method, sessionID, body s
 	debugf(me+": dry=%v url=[%s]", dry, api)
 	var respBody []byte
 	var err error
-	if !dry {
+	if dry {
+		// {"response": {"status": "fail", "err": {"code": 67174402, "msg": " No such Server"}}}
+		str := `{"response": {"status": "OK", "err": {"msg": "mock response for dry mode"}}}`
+		respBody = []byte(str)
+	} else {
 		respBody, err = httpPostString(api, contentTypeJSON, body)
 	}
 	if err != nil {
