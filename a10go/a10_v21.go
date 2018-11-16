@@ -73,12 +73,12 @@ func (c *Client) ServerList() []A10Server {
 	return a10ServerList(c.debugf, c.host, c.sessionID)
 }
 
-// ServerCreate creates new server
+// ServerCreate creates new server. ports is list of "portName,portProtocol"
 func (c *Client) ServerCreate(name, host string, ports []string) error {
 	return serverPost(c, "slb.server.create", name, host, ports)
 }
 
-// ServerUpdate updates server
+// ServerUpdate updates server. ports is list of "portName,portProtocol"
 func (c *Client) ServerUpdate(name, host string, ports []string) error {
 	return serverPost(c, "slb.server.update", name, host, ports)
 }
