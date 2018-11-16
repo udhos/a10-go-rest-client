@@ -9,8 +9,9 @@ A10 golang rest client
 
     git clone https://github.com/udhos/a10-go-rest-client ;# clone outside of GOPATH
     cd a10-go-rest-client
+    go test ./a10go
     go install ./a10go
-    go install ./examples/a10list
+    go install ./examples/...
 
 # Usage
 
