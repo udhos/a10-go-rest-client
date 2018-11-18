@@ -85,6 +85,8 @@ func (c *Client) ServerUpdate(name, host string, ports []string) error {
 
 func serverPost(c *Client, method, name, host string, ports []string) error {
 
+	me := "serverPost"
+
 	format := `{
             "server": {
                 "name": "%s",
@@ -110,7 +112,11 @@ func serverPost(c *Client, method, name, host string, ports []string) error {
 
 	body, errPost := c.Post(method, payload)
 
-	c.debugf("serverPost: method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	if c.opt.Dry {
+		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	} else {
+		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	}
 
 	if errPost != nil {
 		return fmt.Errorf("serverPost: method=%s error: %v", method, errPost)
@@ -152,12 +158,18 @@ func (c *Client) ServerDelete(name string) error {
 
 	payload := fmt.Sprintf(format, name)
 
-	body, errDelete := c.Post("slb.server.delete", payload)
+	method := "slb.server.delete"
 
-	c.debugf("ServerDelete: reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+	body, errPost := c.Post(method, payload)
 
-	if errDelete != nil {
-		return fmt.Errorf(me+": error: %v", errDelete)
+	if c.opt.Dry {
+		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	} else {
+		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	}
+
+	if errPost != nil {
+		return fmt.Errorf(me+": error: %v", errPost)
 	}
 
 	if badJSONResponse(c.debugf, body) {
@@ -221,6 +233,8 @@ func (c *Client) ServiceGroupUpdate(name, protocol string, members []string) err
 
 func serviceGroupPost(c *Client, method, name, protocol string, members []string) error {
 
+	me := "serviceGroupPost"
+
 	format := `{
             "service_group": {
                 "name": "%s",
@@ -245,7 +259,11 @@ func serviceGroupPost(c *Client, method, name, protocol string, members []string
 
 	body, errPost := c.Post(method, payload)
 
-	c.debugf("serviceGroupPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
+	if c.opt.Dry {
+		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	} else {
+		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	}
 
 	if errPost != nil {
 		return fmt.Errorf("serviceGroupPost: method=%s error: %v", method, errPost)
@@ -289,12 +307,18 @@ func (c *Client) ServiceGroupDelete(name string) error {
 
 	payload := fmt.Sprintf(format, name)
 
-	body, errDelete := c.Post("slb.service_group.delete", payload)
+	method := "slb.service_group.delete"
 
-	c.debugf(me+": reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+	body, errPost := c.Post(method, payload)
 
-	if errDelete != nil {
-		return fmt.Errorf(me+": error: %v", errDelete)
+	if c.opt.Dry {
+		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	} else {
+		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	}
+
+	if errPost != nil {
+		return fmt.Errorf(me+": error: %v", errPost)
 	}
 
 	if badJSONResponse(c.debugf, body) {
@@ -345,7 +369,11 @@ func virtualServerPost(c *Client, method, name, address string, virtualPorts []s
 
 	body, errPost := c.Post(method, payload)
 
-	c.debugf("virtualServerPost: method=%s reqPayload=[%s] respBody=[%s] error=[%v]", method, payload, body, errPost)
+	if c.opt.Dry {
+		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	} else {
+		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	}
 
 	if errPost != nil {
 		return fmt.Errorf(me+": error: %v", errPost)
@@ -384,12 +412,18 @@ func (c *Client) VirtualServerDelete(name string) error {
 
 	payload := fmt.Sprintf(format, name)
 
-	body, errDelete := c.Post("slb.virtual_server.delete", payload)
+	method := "slb.virtual_server.delete"
 
-	c.debugf(me+": reqPayload=[%s] respBody=[%s] error=[%v]", payload, body, errDelete)
+	body, errPost := c.Post(method, payload)
 
-	if errDelete != nil {
-		return fmt.Errorf(me+": error: %v", errDelete)
+	if c.opt.Dry {
+		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	} else {
+		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+	}
+
+	if errPost != nil {
+		return fmt.Errorf(me+": error: %v", errPost)
 	}
 
 	if badJSONResponse(c.debugf, body) {
