@@ -48,7 +48,7 @@ func (c *Client) Login(username, password string) error {
 
 // Logout closes an existing session
 func (c *Client) Logout() error {
-	return a10v21Close(c.host, c.sessionID)
+	return a10v21Close(c.debugf, c.host, c.sessionID)
 }
 
 // Get calls http GET for an specific api method
@@ -738,16 +738,26 @@ func a10SessionDelete(debugf FuncPrintf, host, method, sessionID, body string) (
 
 const contentTypeJSON = "application/json"
 
-func a10v21Close(host, sessionID string) error {
+func a10v21Close(debugf FuncPrintf, host, sessionID string) error {
 
-	api := a10v21urlSession(host, "session.close", sessionID)
+	method := "session.close"
+
+	api := a10v21urlSession(host, method, sessionID)
 
 	format := `{"session_id": "%s"}`
 	payload := fmt.Sprintf(format, sessionID)
 
-	_, errPost := httpPostString(api, contentTypeJSON, payload)
+	body, errPost := httpPostString(api, contentTypeJSON, payload)
 
-	return errPost
+	if errPost != nil {
+		return fmt.Errorf("a10v21Close: method=%s error: %v", method, errPost)
+	}
+
+	if badJSONResponse(debugf, body) {
+		return fmt.Errorf("a10v21Close: method=%s bad response: [%s]", method, string(body))
+	}
+
+	return nil
 }
 
 func a10v21Auth(host, username, password string) (string, error) {
