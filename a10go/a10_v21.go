@@ -110,12 +110,16 @@ func serverPost(c *Client, method, name, host string, ports []string) error {
 
 	payload := fmt.Sprintf(format, name, host, portList)
 
+	return doPost(c, me, method, payload)
+}
+
+func doPost(c *Client, caller, method, payload string) error {
 	body, errPost := c.Post(method, payload)
 
 	if c.opt.Dry {
-		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+		c.opt.DebugPrintf(caller+": doPost: DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
 	} else {
-		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
+		c.debugf(caller+": doPost: method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
 	}
 
 	if errPost != nil {
@@ -160,23 +164,7 @@ func (c *Client) ServerDelete(name string) error {
 
 	method := "slb.server.delete"
 
-	body, errPost := c.Post(method, payload)
-
-	if c.opt.Dry {
-		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	} else {
-		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	}
-
-	if errPost != nil {
-		return fmt.Errorf(me+": error: %v", errPost)
-	}
-
-	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf(me+": bad response: %s", string(body))
-	}
-
-	return nil
+	return doPost(c, me, method, payload)
 }
 
 // {"response": {"status": "OK"}}
@@ -257,23 +245,7 @@ func serviceGroupPost(c *Client, method, name, protocol string, members []string
 
 	payload := fmt.Sprintf(format, name, protocol, memberList)
 
-	body, errPost := c.Post(method, payload)
-
-	if c.opt.Dry {
-		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	} else {
-		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	}
-
-	if errPost != nil {
-		return fmt.Errorf("serviceGroupPost: method=%s error: %v", method, errPost)
-	}
-
-	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf("serviceGroupPost: method=%s bad response: %s", method, string(body))
-	}
-
-	return nil
+	return doPost(c, me, method, payload)
 }
 
 const defaultProtoTCP = "2"
@@ -309,23 +281,7 @@ func (c *Client) ServiceGroupDelete(name string) error {
 
 	method := "slb.service_group.delete"
 
-	body, errPost := c.Post(method, payload)
-
-	if c.opt.Dry {
-		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	} else {
-		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	}
-
-	if errPost != nil {
-		return fmt.Errorf(me+": error: %v", errPost)
-	}
-
-	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf(me+": bad response: %s", string(body))
-	}
-
-	return nil
+	return doPost(c, me, method, payload)
 }
 
 // VirtualServerCreate creates new virtual server
@@ -367,23 +323,7 @@ func virtualServerPost(c *Client, method, name, address string, virtualPorts []s
 
 	payload := fmt.Sprintf(format, name, address, portList)
 
-	body, errPost := c.Post(method, payload)
-
-	if c.opt.Dry {
-		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	} else {
-		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	}
-
-	if errPost != nil {
-		return fmt.Errorf(me+": error: %v", errPost)
-	}
-
-	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf(me+": bad response: %s", string(body))
-	}
-
-	return nil
+	return doPost(c, me, method, payload)
 }
 
 func virtualPortFormat(serviceGroup, port, protocol string) string {
@@ -414,23 +354,7 @@ func (c *Client) VirtualServerDelete(name string) error {
 
 	method := "slb.virtual_server.delete"
 
-	body, errPost := c.Post(method, payload)
-
-	if c.opt.Dry {
-		c.opt.DebugPrintf(me+": DRY method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	} else {
-		c.debugf(me+": method=%s reqPayload=[%s] respBody=[%s] bodySize=%d error=[%v]", method, payload, body, len(body), errPost)
-	}
-
-	if errPost != nil {
-		return fmt.Errorf(me+": error: %v", errPost)
-	}
-
-	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf(me+": bad response: %s", string(body))
-	}
-
-	return nil
+	return doPost(c, me, method, payload)
 }
 
 // VirtualServerList retrieves the full virtual server list
