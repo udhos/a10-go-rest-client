@@ -113,6 +113,7 @@ func serverPost(c *Client, method, name, host string, ports []string) error {
 	return doPost(c, me, method, payload)
 }
 
+// doPost requires a valid JSON response, otherwise signals error
 func doPost(c *Client, caller, method, payload string) error {
 	body, errPost := c.Post(method, payload)
 
@@ -123,11 +124,11 @@ func doPost(c *Client, caller, method, payload string) error {
 	}
 
 	if errPost != nil {
-		return fmt.Errorf("serverPost: method=%s error: %v", method, errPost)
+		return fmt.Errorf(caller+": doPost: method=%s error: %v", method, errPost)
 	}
 
 	if badJSONResponse(c.debugf, body) {
-		return fmt.Errorf("serverPost: method=%s bad response: [%s]", method, string(body))
+		return fmt.Errorf(caller+": doPost: method=%s bad response: [%s]", method, string(body))
 	}
 
 	return nil
